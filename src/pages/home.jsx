@@ -50,7 +50,7 @@ const HomePage = ({
         <SortSelector sortBy={sortBy} onSortChange={setSortBy} />
       </div>
 
-      {loading && <Spinner />}
+      {loading && <Spinner color='white' />}
       {error && (
         <div className='error'>
           <p>❌ {error}</p>

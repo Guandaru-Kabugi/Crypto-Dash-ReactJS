@@ -9,9 +9,9 @@ const Spinner = ({color='blue', size='150'}) => {
   return (
     <div>
       <BarLoader
-        color='blue'
+        color={color}
         cssOverride={override}
-        size={150}
+        size={size}
         aria-label='Loading Spinner'
         data-testid='loader'
       />
