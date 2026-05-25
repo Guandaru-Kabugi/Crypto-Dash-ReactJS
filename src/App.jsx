@@ -1,0 +1,99 @@
+import { useState, useEffect } from "react";
+const API_URL = import.meta.env.VITE_API_URL;
+import LimitSelector from "./components/LimitSelector";
+import FilterInput from './components/FilterInput';
+import SortSelector from "./components/SortSelector";
+
+const App = () => {
+  const [coins, setCoins] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [limit, setLimit] = useState(10);
+  const [filter, setFilter] = useState('');
+  const [sortBy, setSortBy] = useState('market_cap_desc');
+
+
+  useEffect(() => {
+
+    const fetchCoins = async () => {
+      try {
+        const res = await fetch(`${API_URL}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`);
+        if (!res.ok) throw new Error("Failed to fetch data");
+        const data = await res.json();
+        setCoins(data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+
+    };
+    fetchCoins();
+  }, [limit]);
+
+  const filteredCoins = coins
+    .filter(
+      (coin) =>
+        coin.name.toLowerCase().includes(filter.toLowerCase()) ||
+        coin.symbol.toLowerCase().includes(filter.toLowerCase())
+    )
+    .slice() // Important: make a shallow copy before sorting!
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'market_cap_desc':
+          return b.market_cap - a.market_cap;
+        case 'price_desc':
+          return b.current_price - a.current_price;
+        case 'price_asc':
+          return a.current_price - b.current_price;
+        case 'change_desc':
+          return b.price_change_percentage_24h - a.price_change_percentage_24h;
+        case 'change_asc':
+          return a.price_change_percentage_24h - b.price_change_percentage_24h;
+        default:
+          return 0;
+      }
+    });
+
+
+  return (<div>
+    <h1>🚀 Crypto Dash</h1>
+    {loading && <p>Loading...</p>}
+    {error && (
+      <div className='error'>
+        <p>❌ {error}</p>
+      </div>
+    )}
+    <div className='top-controls'>
+      <FilterInput filter={filter} onFilterChange={setFilter} />
+      <LimitSelector limit={limit} onLimitChange={setLimit} />
+      <SortSelector sortBy={sortBy} onSortChange={setSortBy} />
+    </div>
+    {!loading && !error && (
+      <main className='grid'>
+        {filteredCoins.length > 0 ? filteredCoins.map((coin) => (
+          <div className='coin-card' key={coin.id}>
+            <div className='coin-header'>
+              <img src={coin.image} alt={coin.name} className='coin-image' />
+              <div>
+                <h2>{coin.name}</h2>
+                <p className='symbol'>{coin.symbol.toUpperCase()}</p>
+              </div>
+            </div>
+            <p>Price: ${coin.current_price?.toLocaleString() ?? 'N/A'}</p>
+            <p
+              className={
+                (coin.price_change_percentage_24h ?? 0) >= 0 ? 'positive' : 'negative'
+              }
+            >
+              24h Change: {coin.price_change_percentage_24h?.toFixed(2) ?? 'N/A'}%
+            </p>
+            <p>Market Cap: ${coin.market_cap?.toLocaleString() ?? 'N/A'}</p>
+          </div>
+        )) : <p> No coins matching your filter. </p>}
+      </main>
+    )}
+  </div>);
+}
+
+export default App;
